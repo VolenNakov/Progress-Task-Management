@@ -1,0 +1,43 @@
+services:
+  database:
+    image: mysql
+    restart: always
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - podio-db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${MYSQL_USER}", "-p${MYSQL_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  backend:
+    build:      
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: flask_backend
+    ports:
+      - 5000:5000
+    depends_on:
+      - database
+    environment:
+      - FLASK_ENV=${FLASK_ENV}
+      - DATABASE_URI=${DATABASE_URI}
+    volumes:
+      - ./backend:/app
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: react_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+volumes:
+  podio-db:
